@@ -227,7 +227,11 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 
 		if (!zstr(binding->cred)) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, binding->auth_scheme);
-			switch_curl_easy_setopt(curl_handle, CURLOPT_USERPWD, binding->cred);
+			if (binding->auth_scheme == CURLAUTH_BEARER) {
+				switch_curl_easy_setopt(curl_handle, CURLOPT_XOAUTH2_BEARER, binding->cred);
+			} else {
+				switch_curl_easy_setopt(curl_handle, CURLOPT_USERPWD, binding->cred);
+			}
 		}
 		switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
 		if (binding->method != NULL)
@@ -415,6 +419,8 @@ static switch_status_t do_config(void)
 					auth_scheme |= CURLAUTH_GSSNEGOTIATE;
 				} else if (!strcasecmp(val, "any")) {
 					auth_scheme = (long)CURLAUTH_ANY;
+				} else if (!strcasecmp(val, "bearer")) {
+					auth_scheme = CURLAUTH_BEARER;
 				}
 			} else if (!strcasecmp(var, "disable-100-continue") && !switch_true(val)) {
 				disable100continue = 0;
